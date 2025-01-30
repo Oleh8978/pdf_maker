@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Generator</title>
+    <link rel="manifest" href="./manifest.json">
+    <script src="./jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        input,
+        button {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        canvas {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>PDF Generator</h1>
+        <input type="file" id="imageUpload" accept="image/*"><br>
+        <label>Ширина (cm): <input type="number" id="pdfWidth" value="21"></label>
+        <label>Висота (cm): <input type="number" id="pdfHeight" value="29.7"></label><br>
+        <label>Поле 1 (Верхній лівий кут): <input type="text" id="field1"></label><br>
+        <label>Поле 2 (Верхній Лівий кут пид полем 1): <input type="text" id="field2"></label><br>
+        <label>Поле 3 (Правий верхниій кут): <input type="text" id="field3"></label><br>
+        <button onclick="generatePDF()">Generate PDF</button>
+    </div>
+
+    <script>
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'cm' });
+            const width = parseFloat(document.getElementById('pdfWidth').value);
+            const height = parseFloat(document.getElementById('pdfHeight').value);
+            const field1 = document.getElementById('field1').value;
+            const field2 = document.getElementById('field2').value;
+            const field3 = document.getElementById('field3').value;
+            const file = document.getElementById('imageUpload').files[0];
+
+            if (!file) {
+                alert("Please upload an image.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = function () {
+                    doc.addImage(img, 'JPEG', 1, 3, width - 2, height - 5);
+                    doc.setFontSize(14);
+                    doc.text(field1, 1, 3.5); // Adjusted to align over image
+                    doc.text(field2, 1, 5); // Below field1
+                    doc.text(field3, width - 5, 3.5); // Right upper corner
+                    doc.save('generated.pdf');
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+
+</html>
