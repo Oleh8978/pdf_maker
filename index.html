@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Generator</title>
+    <title>Генератор PDF</title>
     <link rel="manifest" href="./manifest.json">
     <script src="./jspdf.umd.min.js"></script>
     <style>
@@ -27,7 +27,8 @@
         }
 
         input,
-        button {
+        button,
+        select {
             width: 100%;
             margin: 10px 0;
             padding: 10px;
@@ -54,17 +55,41 @@
 
 <body>
     <div class="container">
-        <h1>PDF Generator</h1>
+        <h1>Генератор PDF</h1>
         <input type="file" id="imageUpload" accept="image/*"><br>
-        <label>Ширина (cm): <input type="number" id="pdfWidth" value="21"></label>
-        <label>Висота (cm): <input type="number" id="pdfHeight" value="29.7"></label><br>
-        <label>Поле 1 (Верхній лівий кут): <input type="text" id="field1"></label><br>
-        <label>Поле 2 (Верхній Лівий кут пид полем 1): <input type="text" id="field2"></label><br>
-        <label>Поле 3 (Правий верхниій кут): <input type="text" id="field3"></label><br>
-        <button onclick="generatePDF()">Generate PDF</button>
+        <label>Розмір сторінки:
+            <select id="pageSize">
+                <option value="custom">Власний</option>
+                <option value="A1">A1</option>
+                <option value="A2">A2</option>
+                <option value="A3">A3</option>
+                <option value="A4" selected>A4</option>
+            </select>
+        </label>
+        <label>Ширина (см): <input type="number" id="pdfWidth" value="21"></label>
+        <label>Висота (см): <input type="number" id="pdfHeight" value="29.7"></label><br>
+        <label>Поле 1 (верхній лівий кут): <input type="text" id="field1"></label>
+        <label>Колір фону: <input type="color" id="color1"></label><br>
+        <label>Поле 2 (нижче першого): <input type="text" id="field2"></label>
+        <label>Колір фону: <input type="color" id="color2"></label><br>
+        <label>Поле 3 (верхній правий кут): <input type="text" id="field3"></label>
+        <label>Колір фону: <input type="color" id="color3"></label><br>
+        <button onclick="generatePDF()">Створити PDF</button>
     </div>
 
     <script>
+        function setPageSize() {
+            const size = document.getElementById('pageSize').value;
+            const widthInput = document.getElementById('pdfWidth');
+            const heightInput = document.getElementById('pdfHeight');
+            const sizes = { A1: [59.4, 84.1], A2: [42, 59.4], A3: [29.7, 42], A4: [21, 29.7] };
+
+            if (size in sizes) {
+                [widthInput.value, heightInput.value] = sizes[size];
+            }
+        }
+        document.getElementById('pageSize').addEventListener('change', setPageSize);
+
         function generatePDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ unit: 'cm' });
@@ -73,10 +98,14 @@
             const field1 = document.getElementById('field1').value;
             const field2 = document.getElementById('field2').value;
             const field3 = document.getElementById('field3').value;
+            const color1 = document.getElementById('color1').value;
+            const color2 = document.getElementById('color2').value;
+            const color3 = document.getElementById('color3').value;
+            const previewCheck = false;
             const file = document.getElementById('imageUpload').files[0];
 
             if (!file) {
-                alert("Please upload an image.");
+                alert("Будь ласка, завантажте зображення.");
                 return;
             }
 
@@ -86,11 +115,27 @@
                 img.src = event.target.result;
                 img.onload = function () {
                     doc.addImage(img, 'JPEG', 1, 3, width - 2, height - 5);
+
+                    doc.setFillColor(color1);
+                    doc.rect(1, 3, 6, 1, 'F');
+                    doc.setFillColor(color2);
+                    doc.rect(1, 4.5, 6, 1, 'F');
+                    doc.setFillColor(color3);
+                    doc.rect(width - 7, 3, 6, 1, 'F');
+
+                    doc.setTextColor(0, 0, 0);
                     doc.setFontSize(14);
-                    doc.text(field1, 1, 3.5); // Adjusted to align over image
-                    doc.text(field2, 1, 5); // Below field1
-                    doc.text(field3, width - 5, 3.5); // Right upper corner
-                    doc.save('generated.pdf');
+                    doc.text(field1, 1.5, 3.7);
+                    doc.text(field2, 1.5, 5.2);
+                    doc.text(field3, width - 6.5, 3.7);
+
+                    if (previewCheck) {
+                        const pdfDataUri = doc.output('datauristring');
+                        const newWindow = window.open();
+                        newWindow.document.write(`<iframe width='100%' height='100%' src='${pdfDataUri}'></iframe>`);
+                    } else {
+                        doc.save('generated.pdf');
+                    }
                 };
             };
             reader.readAsDataURL(file);
